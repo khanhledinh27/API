@@ -11,7 +11,11 @@ class SubjectController extends Controller
     // Get all subjects
     public function index()
     {
-        $subjects = Subject::all();
+        $subjects = Subject::all()->map(function ($subject) {
+            $subject->thumbnail = $subject->thumbnail ? url($subject->thumbnail) : null;
+            return $subject;
+        });
+    
         return response()->json($subjects);
     }
 
@@ -39,7 +43,7 @@ class SubjectController extends Controller
         $subject = Subject::create([
             'name' => $request->name,
             'description' => $request->description,
-            'thumbnail' => $imagePath ? asset('storage/' . $imagePath) : null,
+            'thumbnail' => $imagePath ? url('storage/' . $imagePath) : null, // Dùng url() thay vì asset()
         ]);
 
         // $subject = Subject::create($request->all());
@@ -81,8 +85,10 @@ class SubjectController extends Controller
         if ($request->hasFile('thumbnail')) {
             // Xóa ảnh cũ nếu có
             if ($subject->thumbnail) {
-                $oldImagePath = str_replace(asset('storage/'), '', $subject->thumbnail);
-                \Storage::disk('public')->delete($oldImagePath);
+                $oldImagePath = str_replace(url('storage/'), '', $subject->thumbnail);
+                if (\Storage::disk('public')->exists($oldImagePath)) {
+                    \Storage::disk('public')->delete($oldImagePath);
+                }
             }
 
             // Lưu ảnh mới
