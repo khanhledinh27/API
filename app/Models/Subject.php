@@ -15,8 +15,14 @@ class Subject extends Model
         'thumbnail',
     ];
 
+    protected $appends = ['thumbnail_url']; // Tự động thêm khi trả về JSON
+
     public function getThumbnailUrlAttribute()
     {
-        return $this->thumbnail ? url('storage/' . $this->thumbnail) : null;
+        if (!$this->thumbnail) {
+            return null; // Nếu không có ảnh, trả về null
+        }
+
+        return asset('storage/' . $this->thumbnail); // Đảm bảo chỉ có 1 lần asset()
     }
 }
