@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class SubjectController extends Controller
 {
@@ -93,6 +94,7 @@ class SubjectController extends Controller
             /// Lưu ảnh mới
             $imagePath = $request->file('thumbnail')->store('thumbnails', 'public');
             $subject->thumbnail = $imagePath;
+            $subject->save();
         }
 
         // Cập nhật thông tin khác
