@@ -14,4 +14,9 @@ class Subject extends Model
         'description',
         'thumbnail',
     ];
+
+    public function getThumbnailUrlAttribute()
+    {
+        return $this->thumbnail ? url('storage/' . $this->thumbnail) : null;
+    }
 }

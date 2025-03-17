@@ -12,8 +12,12 @@ class SubjectController extends Controller
     public function index()
     {
         $subjects = Subject::all()->map(function ($subject) {
-            $subject->thumbnail = $subject->thumbnail ? url($subject->thumbnail) : null;
-            return $subject;
+            return [
+                'id' => $subject->id,
+                'name' => $subject->name,
+                'description' => $subject->description,
+                'thumbnail' => $subject->thumbnail_url, // Lấy URL từ accessor
+            ];
         });
     
         return response()->json($subjects);
@@ -22,7 +26,6 @@ class SubjectController extends Controller
     // Store a new subject
     public function store(Request $request)
     { 
-        \Log::info('Request data:', $request->all());
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
@@ -43,10 +46,9 @@ class SubjectController extends Controller
         $subject = Subject::create([
             'name' => $request->name,
             'description' => $request->description,
-            'thumbnail' => $imagePath ? url('storage/' . $imagePath) : null, // Dùng url() thay vì asset()
+            'thumbnail' => $imagePath
         ]);
 
-        // $subject = Subject::create($request->all());
         return response()->json($subject, 201);
     }
 
@@ -84,22 +86,18 @@ class SubjectController extends Controller
         // Xử lý cập nhật ảnh nếu có ảnh mới
         if ($request->hasFile('thumbnail')) {
             // Xóa ảnh cũ nếu có
-            if ($subject->thumbnail) {
-                $oldImagePath = str_replace(url('storage/'), '', $subject->thumbnail);
-                if (\Storage::disk('public')->exists($oldImagePath)) {
-                    \Storage::disk('public')->delete($oldImagePath);
-                }
+            if ($subject->thumbnail && Storage::disk('public')->exists($subject->thumbnail)) {
+                Storage::disk('public')->delete($subject->thumbnail);
             }
 
-            // Lưu ảnh mới
+            /// Lưu ảnh mới
             $imagePath = $request->file('thumbnail')->store('thumbnails', 'public');
-            $subject->thumbnail = asset('storage/' . $imagePath);
+            $subject->thumbnail = $imagePath;
         }
 
         // Cập nhật thông tin khác
         $subject->name = $request->name;
         $subject->description = $request->description;
-        
         $subject->save();
 
         // $subject->update($request->all());
@@ -113,6 +111,11 @@ class SubjectController extends Controller
 
         if (!$subject) {
             return response()->json(['message' => 'Subject not found'], 404);
+        }
+
+        // Xóa ảnh nếu có
+        if ($subject->thumbnail && Storage::disk('public')->exists($subject->thumbnail)) {
+            Storage::disk('public')->delete($subject->thumbnail);
         }
 
         $subject->delete();
